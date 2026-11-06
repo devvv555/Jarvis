@@ -280,13 +280,42 @@
       };
     }
 
-    function handleCommand(cmd) {
+    async function handleCommand(cmd) {
       const lower = cmd.toLowerCase();
-      if (lower.includes('email') || lower.includes('check mail')) {
+      const label = document.getElementById('voice-label');
+
+      if (lower.includes('check mail') || lower.includes('check email') || lower.includes('inbox')) {
         speakText("Checking your personal and PSGIM college emails right now, sir.");
         loadEmails(true);
-      } else {
-        speakText("At your service, sir. I have registered your command: " + cmd);
+        return;
+      }
+
+      label.textContent = "Analyzing query...";
+
+      // Attempt to get user GPS latitude/longitude if available
+      let userLat = 11.0168;
+      let userLon = 76.9558;
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          userLat = pos.coords.latitude;
+          userLon = pos.coords.longitude;
+        }, () => {});
+      }
+
+      try {
+        const res = await fetch('/api/ask', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({query: cmd, lat: userLat, lon: userLon})
+        });
+        const data = await res.json();
+        label.textContent = data.answer;
+        speakText(data.answer);
+      } catch (e) {
+        const err = "Satellite uplink disrupted, sir. Please retry.";
+        label.textContent = err;
+        speakText(err);
       }
     }
 
