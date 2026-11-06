@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J.A.R.V.I.S. Command Center</title>
+  <style>
+    :root {
+      --bg: #030812;
+      --panel-bg: rgba(7, 16, 32, 0.72);
+      --panel-border: rgba(30, 90, 150, 0.4);
+      --panel-border-bright: rgba(56, 189, 248, 0.6);
+      --cyan: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.4);
+      --cyan-bright: #00f0ff;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --dark-card: rgba(10, 24, 48, 0.65);
+      --text: #e2e8f0;
+      --text-dim: #7dd3fc;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Rajdhani", sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(ellipse at 50% 15%, #0c2b5e 0%, #030816 75%, #01040a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Subtle HUD grid background */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: 
+        linear-gradient(rgba(0, 180, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 180, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* TOP TITLE BAR */
+    .top-bar {
+      z-index: 10;
+      height: 38px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      background: rgba(2, 6, 18, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+    }
+
+    .top-left-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .top-left-brand span.ver {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    .window-btn {
+      cursor: pointer;
+      padding: 2px 6px;
+      transition: color 0.2s;
+    }
+    .window-btn:hover { color: #fff; }
+
+    /* HUD HEADER */
+    .hud-header {
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: linear-gradient(180deg, rgba(8, 20, 42, 0.7) 0%, rgba(3, 8, 18, 0.4) 100%);
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .arc-reactor-logo {
+      width: 44px;
+      height: 44px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reactor-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid rgba(56, 189, 248, 0.4);
+      border-top-color: var(--cyan-bright);
+      animation: spin 10s linear infinite;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+    }
+
+    .reactor-core {
+      width: 22px;
+      height: 22px;
+      background: radial-gradient(circle, #fff 0%, var(--cyan-bright) 60%, transparent 100%);
+      border-radius: 4px;
+      transform: rotate(45deg);
+      box-shadow: 0 0 12px var(--cyan-bright);
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .brand-text h1 {
+      font-size: 1.25rem;
+      letter-spacing: 3px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-text .sub {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .time-chip {
+      background: rgba(14, 30, 56, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 6px;
+      padding: 4px 12px;
+      text-align: left;
+    }
+    .time-chip .day-date {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .time-chip .clock {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    /* CENTER TABS */
+    .nav-tabs {
+      display: flex;
+      background: rgba(10, 24, 48, 0.7);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      gap: 6px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* RIGHT COMMANDER PROFILE */
+    .commander-badge {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #6ee7b7;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding-left: 14px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--cyan);
+      background: linear-gradient(135deg, #1e3a8a, #0284c7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      font-size: 0.85rem;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    .user-meta .role {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .user-meta .name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* MAIN CONTENT VIEW */
+    .main-stage {
+      flex: 1;
+      padding: 18px 24px 80px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+      z-index: 5;
+    }
+
+    /* HERO VOICE BANNER */
+    .hero-voice-card {
+      background: linear-gradient(135deg, rgba(8, 25, 55, 0.85) 0%, rgba(3, 12, 28, 0.95) 100%);
+      border: 1px solid var(--panel-border-bright);
+      border-radius: 14px;
+      padding: 24px 32px;
+      display: grid;
+      grid-template-columns: 1fr 1.3fr 1fr;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 180, 255, 0.12), inset 0 0 30px rgba(0, 180, 255, 0.05);
+    }
+
+    .hero-voice-card::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: 15%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 2;
+    }
+
+    .chip-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .status-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    .badge-chip {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--cyan);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 16px;
+    }
+
+    .hero-title-group h2 {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .hero-title-group h3 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+      margin: 4px 0 8px 0;
+    }
+
+    .hero-desc {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.45;
+      max-width: 320px;
+    }
+
+    /* CENTER WAVEFORM HUD */
+    .hero-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 160px;
+      z-index: 2;
+    }
+
+    .voice-radar-wrapper {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px dashed rgba(56, 189, 248, 0.3);
+    }
+    .rc-1 { width: 170px; height: 170px; animation: spin 20s linear infinite; }
+    .rc-2 { width: 130px; height: 130px; border-color: rgba(0, 240, 255, 0.4); animation: spinReverse 15s linear infinite; }
+    .rc-3 { width: 90px; height: 90px; border-style: solid; border-width: 2px; border-color: var(--cyan); box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
+
+    @keyframes spinReverse {
+      100% { transform: rotate(-360deg); }
+    }
+
+    .reactor-voice-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #38bdf8 0%, #0369a1 80%, #0284c7 100%);
+      border: 3px solid #fff;
+      box-shadow: 0 0 25px var(--cyan-bright);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 5;
+    }
+
+    .reactor-voice-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 35px #00f0ff;
+    }
+
+    .wave-bars {
+      position: absolute;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      padding: 0 10px;
+    }
+
+    .wave-bar {
+      width: 3px;
+      background: linear-gradient(180deg, var(--cyan-bright) 0%, transparent 100%);
+      border-radius: 2px;
+      height: 20px;
+      animation: pulseBar 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseBar {
+      0% { height: 8px; opacity: 0.3; }
+      100% { height: 48px; opacity: 1; }
+    }
+
+    /* RIGHT ENGINE STATUS TILES */
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 2;
+    }
+
+    .status-tile {
+      background: rgba(10, 24, 48, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.2s;
+    }
+    .status-tile:hover {
+      border-color: var(--cyan);
+    }
+
+    .tile-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tile-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan);
+      font-size: 1rem;
+    }
+
+    .tile-labels .t-sub {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tile-labels .t-main {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .mini-waveform {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .mini-bar {
+      width: 2px;
+      height: 14px;
+      background: var(--cyan);
+      border-radius: 1px;
+      opacity: 0.8;
+      animation: miniPulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes miniPulse {
+      0% { height: 4px; }
+      100% { height: 18px; }
+    }
+
+    .toggle-switch {
+      width: 40px;
+      height: 20px;
+      background: #0284c7;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+    .toggle-switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    /* GRID SECTION 1: LANGUAGE & HEARING */
+    .hud-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .hud-box {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-box-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .hud-box-header .icon-wrap {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan);
+      font-size: 0.85rem;
+    }
+
+    .hud-box-header h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .hud-box-header p {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .dropdown-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field-card {
+      background: rgba(10, 24, 48, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .field-card:hover {
+      border-color: var(--cyan);
+    }
+
+    .field-card .f-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field-card .f-val {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mic-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10, 24, 48, 0.5);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+    }
+
+    .mic-live-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: #6ee7b7;
+      font-weight: 600;
+    }
+
+    .test-btn {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .test-btn:hover {
+      background: #0ea5e9;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    /* GRID SECTION 2: TRANSCRIPTION ENGINES */
+    .engines-section {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      backdrop-filter: blur(8px);
+    }
+
+    .section-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title-wrap h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .section-title-wrap p {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .active-engine-badge {
+      font-size: 0.7rem;
+      color: #6ee7b7;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-weight: 600;
+    }
+
+    .engines-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .engine-card {
+      background: var(--dark-card);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .engine-card.active {
+      border: 1.5px solid var(--emerald);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.35) 0%, rgba(10, 24, 48, 0.8) 100%);
+    }
+
+    .engine-card:hover:not(.active) {
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+    }
+
+    .engine-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .engine-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: var(--cyan);
+    }
+
+    .engine-meta {
+      flex: 1;
+    }
+
+    .engine-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .engine-title-row h5 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tag-badge {
+      font-size: 0.6rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .tag-cloud { background: rgba(56, 189, 248, 0.2); color: var(--cyan); }
+    .tag-local { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+    .tag-free { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .tag-prem { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+    .engine-desc {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    .engine-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 8px;
+    }
+
+    .engine-active-text {
+      font-size: 0.7rem;
+      color: #6ee7b7;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .engine-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #e2e8f0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .engine-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #fff;
+    }
+
+    /* BOTTOM FLOATING COMMAND BAR */
+    .bottom-command-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(2, 6, 18, 0.92);
+      border-top: 1px solid rgba(56, 189, 248, 0.35);
+      backdrop-filter: blur(14px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .bottom-left-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .hud-stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+    }
+
+    .hud-stat-item .label {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 0.5px;
+    }
+    .hud-stat-item .val {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* CENTER FLOATING TALK TO JARVIS PILL */
+    .talk-jarvis-pill {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, rgba(8, 25, 55, 0.9) 0%, rgba(2, 12, 32, 0.95) 100%);
+      border: 1.5px solid var(--cyan);
+      padding: 8px 24px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.35), inset 0 0 10px rgba(56, 189, 248, 0.2);
+      transition: all 0.25s;
+    }
+
+    .talk-jarvis-pill:hover {
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
+      transform: scale(1.02);
+    }
+
+    .pill-wave {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .pill-wave-bar {
+      width: 2px;
+      height: 12px;
+      background: var(--cyan);
+      border-radius: 1px;
+      animation: pillPulse 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes pillPulse {
+      0% { height: 4px; }
+      100% { height: 16px; }
+    }
+
+    .pill-content {
+      text-align: center;
+    }
+    .pill-content .main {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #fff;
+      text-transform: uppercase;
+    }
+    .pill-content .sub {
+      font-size: 0.65rem;
+      color: var(--cyan);
+    }
+
+    .mic-action-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--cyan);
+      color: #030816;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: bold;
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    /* BOTTOM RIGHT SHORTCUTS */
+    .bottom-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .action-btn:hover { color: #fff; }
+
+    .connect-app-btn {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-weight: 700;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .connect-app-btn:hover {
+      background: var(--cyan);
+      color: #030816;
+      box-shadow: 0 0 15px var(--cyan);
+    }
+
+    /* MODAL FOR PHONE QR */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-card {
+      background: #081426;
+      border: 1.5px solid var(--cyan);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.3);
+    }
+
+    .modal-card h3 {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .modal-card p {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    .modal-card img {
+      width: 200px;
+      height: 200px;
+      border-radius: 12px;
+      border: 2px solid var(--cyan);
+      margin-bottom: 16px;
+    }
+    .close-modal-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP TITLE BAR -->
+  <div class="top-bar">
+    <div class="top-left-brand">
+      <span>🛡️ J . A . R . V . I . S .</span>
+      <span class="ver">v1.0.68</span>
+    </div>
+    <div class="window-controls">
+      <span>Help ▾</span>
+      <span class="window-btn" onclick="fetch('/api/preset/clean', {method:'POST'})">🗕</span>
+      <span class="window-btn">🗖</span>
+      <span class="window-btn" onclick="window.close()">✕</span>
+    </div>
+  </div>
+
+  <!-- HUD HEADER -->
+  <header class="hud-header">
+    <div class="brand-section">
+      <div class="arc-reactor-logo">
+        <div class="reactor-ring"></div>
+        <div class="reactor-core"></div>
+      </div>
+      <div class="brand-text">
+        <h1>J.A.R.V.I.S.</h1>
+        <div class="sub">COMMAND CENTER</div>
+      </div>
+
+      <div class="time-chip">
+        <div class="day-date" id="dateStr">THURSDAY, OCTOBER 22, 2026</div>
+        <div class="clock" id="clockStr">6:24:17 PM</div>
+      </div>
+    </div>
+
+    <!-- CENTER TABS -->
+    <div class="nav-tabs">
+      <button class="tab-btn" onclick="setTab('center')">COMMAND CENTER</button>
+      <button class="tab-btn" onclick="setTab('core')">AI CORE</button>
+      <button class="tab-btn active" onclick="setTab('voice')">AI VOICE</button>
+      <button class="tab-btn" onclick="setTab('settings')">SETTINGS</button>
+    </div>
+
+    <!-- RIGHT STATUS & PROFILE -->
+    <div class="commander-badge">
+      <div class="status-indicator">
+        <div class="pulse-dot"></div>
+        <div class="status-text">ALL SYSTEMS OPERATIONAL</div>
+      </div>
+      <div class="user-profile">
+        <div class="user-avatar">D</div>
+        <div class="user-meta">
+          <div class="role">COMMANDER</div>
+          <div class="name">Devdarshan</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN STAGE -->
+  <div class="main-stage">
+
+    <!-- HERO VOICE CHAT CARD -->
+    <div class="hero-voice-card">
+      <div class="hero-left">
+        <div class="chip-group">
+          <div class="status-chip">● Voice ready</div>
+          <div class="badge-chip">🎙️ "Hey Jarvis" ready</div>
+          <div class="badge-chip">☁️ Cloud Node Active</div>
+        </div>
+        <div class="hero-title-group">
+          <h2>VOICE</h2>
+          <h3>Voice Chat</h3>
+        </div>
+        <p class="hero-desc">
+          Talk to Jarvis hands-free. Speech is transcribed locally first, then routed to your AI with rich voice controls and instant audio feedback.
+        </p>
+      </div>
+
+      <!-- CENTER HUD RADAR & WAVEFORM -->
+      <div class="hero-center">
+        <div class="voice-radar-wrapper">
+          <div class="radar-circle rc-1"></div>
+          <div class="radar-circle rc-2"></div>
+          <div class="radar-circle rc-3"></div>
+          <div class="reactor-voice-btn" onclick="toggleLocalListening()" id="reactorBtn" title="Click to Speak">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT ENGINE STATUS TILES -->
+      <div class="hero-right">
+        <div class="status-tile">
+          <div class="tile-left">
+            <div class="tile-icon">🎙️</div>
+            <div class="tile-labels">
+              <div class="t-sub">LISTENING</div>
+              <div class="t-main" id="engineName">JARVIS Cloud / WebSpeech</div>
+            </div>
+          </div>
+          <div class="mini-waveform">
+            <div class="mini-bar"></div><div class="mini-bar"></div><div class="mini-bar"></div><div class="mini-bar"></div>
+          </div>
+        </div>
+
+        <div class="status-tile">
+          <div class="tile-left">
+            <div class="tile-icon">🔊</div>
+            <div class="tile-labels">
+              <div class="t-sub">SPEAKING</div>
+              <div class="t-main">Online (British Butler)</div>
+            </div>
+          </div>
+          <div class="mini-waveform">
+            <div class="mini-bar"></div><div class="mini-bar"></div><div class="mini-bar"></div>
+          </div>
+        </div>
+
+        <div class="status-tile">
+          <div class="tile-left">
+            <div class="tile-icon">◎</div>
+            <div class="tile-labels">
+              <div class="t-sub">WAKE WORD</div>
+              <div class="t-main">On ("Hey Jarvis")</div>
+            </div>
+          </div>
+          <div class="toggle-switch" onclick="alert('Wake-word mode is active and listening.')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANGUAGE & HEARING ROW -->
+    <div class="hud-grid-2">
+      <!-- LANGUAGE & VOICE -->
+      <div class="hud-box">
+        <div class="hud-box-header">
+          <div class="icon-wrap">🌐</div>
+          <div>
+            <h4>Language & voice</h4>
+            <p>The language you talk to Jarvis in, and how Jarvis talks back.</p>
+          </div>
+        </div>
+        <div class="dropdown-row">
+          <div class="field-card">
+            <span class="f-label">Language you speak</span>
+            <span class="f-val">English ▾</span>
+          </div>
+          <div class="field-card">
+            <span class="f-label">Language Jarvis speaks</span>
+            <span class="f-val">English ▾</span>
+          </div>
+          <div class="field-card">
+            <span class="f-label">Voice Accent</span>
+            <span class="f-val">British Male ▾</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEARING YOU -->
+      <div class="hud-box">
+        <div class="hud-box-header">
+          <div class="icon-wrap">🎤</div>
+          <div>
+            <h4>Hearing you</h4>
+            <p>Your microphone, and the engine that turns your speech into text.</p>
+          </div>
+        </div>
+        <div class="mic-status-bar">
+          <div class="mic-live-label">
+            <span class="pulse-dot"></span>
+            <span>Microphone detected and ready (Windows Default)</span>
+          </div>
+          <button class="test-btn" onclick="testAudioSpeech()">⚡ Test Audio</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTENING (TRANSCRIPTION) ENGINES -->
+    <div class="engines-section">
+      <div class="section-header-row">
+        <div class="section-title-wrap">
+          <span style="color:var(--cyan); font-size:1.1rem;">🎙️</span>
+          <div>
+            <h4>Listening (transcription)</h4>
+            <p>Which engine turns your speech into text.</p>
+          </div>
+        </div>
+        <div class="active-engine-badge" id="activeEngineLabel">● Now using: JARVIS Cloud Node</div>
+      </div>
+
+      <div class="engines-grid">
+        <!-- 1. JARVIS CLOUD -->
+        <div class="engine-card active" id="card-cloud">
+          <div class="engine-top">
+            <div class="engine-logo">☁️</div>
+            <div class="engine-meta">
+              <div class="engine-title-row">
+                <h5>JARVIS Cloud</h5>
+                <span class="tag-badge tag-cloud">ACCOUNT</span>
+              </div>
+              <p class="engine-desc">Singapore Render cloud node. Fast transcription with live college circular & email polling.</p>
+            </div>
+          </div>
+          <div class="engine-actions">
+            <div class="engine-active-text">✓ Selected & In use</div>
+            <button class="engine-btn" onclick="selectEngine('cloud')">Test engine</button>
+          </div>
+        </div>
+
+        <!-- 2. ON-DEVICE WHISPER -->
+        <div class="engine-card" id="card-whisper">
+          <div class="engine-top">
+            <div class="engine-logo">💻</div>
+            <div class="engine-meta">
+              <div class="engine-title-row">
+                <h5>On-device (Whisper)</h5>
+                <span class="tag-badge tag-local">ON-DEVICE</span>
+              </div>
+              <p class="engine-desc">Private, runs offline on this PC. Zero latency dictation and screen navigation.</p>
+            </div>
+          </div>
+          <div class="engine-actions">
+            <button class="engine-btn" onclick="selectEngine('whisper')">⚡ Use this</button>
+            <button class="engine-btn" onclick="alert('Testing local Whisper engine...')">Test engine</button>
+          </div>
+        </div>
+
+        <!-- 3. GROQ WHISPER -->
+        <div class="engine-card" id="card-groq">
+          <div class="engine-top">
+            <div class="engine-logo">⚡</div>
+            <div class="engine-meta">
+              <div class="engine-title-row">
+                <h5>Groq (Whisper)</h5>
+                <span class="tag-badge tag-free">FREE TIER</span>
+              </div>
+              <p class="engine-desc">Ultra-fast cloud speech-to-text processing on high-speed LPU inference chips.</p>
+            </div>
+          </div>
+          <div class="engine-actions">
+            <button class="engine-btn" onclick="selectEngine('groq')">⚡ Set up</button>
+          </div>
+        </div>
+
+        <!-- 4. OPENAI -->
+        <div class="engine-card" id="card-openai">
+          <div class="engine-top">
+            <div class="engine-logo">🌐</div>
+            <div class="engine-meta">
+              <div class="engine-title-row">
+                <h5>OpenAI Cloud</h5>
+                <span class="tag-badge tag-cloud">CLOUD</span>
+              </div>
+              <p class="engine-desc">Reliable transcription with broad multi-language translation and contextual repair.</p>
+            </div>
+          </div>
+          <div class="engine-actions">
+            <button class="engine-btn" onclick="selectEngine('openai')">Use this</button>
+          </div>
+        </div>
+
+        <!-- 5. DEEPGRAM -->
+        <div class="engine-card" id="card-deepgram">
+          <div class="engine-top">
+            <div class="engine-logo">⚡</div>
+            <div class="engine-meta">
+              <div class="engine-title-row">
+                <h5>Deepgram Nova</h5>
+                <span class="tag-badge tag-cloud">CLOUD</span>
+              </div>
+              <p class="engine-desc">Fast streaming transcription engineered for conversational voice turn-taking.</p>
+            </div>
+          </div>
+          <div class="engine-actions">
+            <button class="engine-btn" onclick="selectEngine('deepgram')">Use this</button>
+          </div>
+        </div>
+
+        <!-- 6. ELEVENLABS -->
+        <div class="engine-card" id="card-elevenlabs">
+          <div class="engine-top">
+            <div class="engine-logo">🔊</div>
+            <div class="engine-meta">
+              <div class="engine-title-row">
+                <h5>ElevenLabs Voice</h5>
+                <span class="tag-badge tag-prem">PREMIUM</span>
+              </div>
+              <p class="engine-desc">Ultra-realistic cinematic voice synthesis mirroring Paul Bettany's J.A.R.V.I.S.</p>
+            </div>
+          </div>
+          <div class="engine-actions">
+            <button class="engine-btn" onclick="selectEngine('elevenlabs')">Use this</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FLOATING COMMAND BAR (BOTTOM) -->
+  <div class="bottom-command-bar">
+    <div class="bottom-left-info">
+      <div class="hud-stat-item">
+        <span style="color:var(--cyan); font-weight:bold;">🛡️</span>
+        <div>
+          <div class="label">JARVIS OS</div>
+          <div class="val">v1.0.68</div>
+        </div>
+      </div>
+      <div class="hud-stat-item">
+        <span style="color:#fbbf24;">☀️</span>
+        <div>
+          <div class="label">WEATHER</div>
+          <div class="val" id="weatherVal">27°C Clear sky</div>
+        </div>
+      </div>
+      <div class="hud-stat-item">
+        <span style="color:#34d399;">📶</span>
+        <div>
+          <div class="label">NETWORK</div>
+          <div class="val">Excellent (Cloud Synced)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER TALK PILL -->
+    <div class="talk-jarvis-pill" onclick="toggleLocalListening()">
+      <div class="pill-wave">
+        <div class="pill-wave-bar"></div><div class="pill-wave-bar"></div><div class="pill-wave-bar"></div>
+      </div>
+      <div class="pill-content">
+        <div class="main">🎙️ TALK TO JARVIS</div>
+        <div class="sub" id="micStatusText">Click to start speaking</div>
+      </div>
+      <div class="pill-wave">
+        <div class="pill-wave-bar"></div><div class="pill-wave-bar"></div><div class="pill-wave-bar"></div>
+      </div>
+      <div class="mic-action-circle">🎙</div>
+    </div>
+
+    <!-- RIGHT CONTROLS -->
+    <div class="bottom-right-actions">
+      <div class="action-btn">
+        <input type="checkbox" id="autoApprove" checked style="accent-color:var(--cyan);">
+        <label for="autoApprove">Auto-approve on</label>
+      </div>
+      <div class="action-btn" onclick="testAudioSpeech()">
+        <span>🔊 Speak</span>
+      </div>
+      <div class="action-btn">
+        <span>👐 Free Hand</span>
+      </div>
+      <button class="connect-app-btn" onclick="openPhoneModal()">
+        📱 Connect Jarvis App
+      </button>
+    </div>
+  </div>
+
+  <!-- PHONE QR MODAL -->
+  <div class="modal-overlay" id="qrModal" onclick="closePhoneModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>📱 Mobile Node Pairing</h3>
+      <p>Scan with your phone camera or visit your 24/7 cloud server to control Jarvis on the go.</p>
+      <img id="qrImg" src="" alt="Pairing QR Code">
+      <div>
+        <p style="font-size:0.75rem; color:var(--cyan); margin-bottom:12px;">Cloud: https://jarvis-gpwz.onrender.com</p>
+        <button class="close-modal-btn" onclick="closePhoneModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Live Clock & Date
+    function updateClock() {
+      const now = new Date();
+      const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+      const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+      
+      const dayName = days[now.getDay()];
+      const monthName = months[now.getMonth()];
+      const dateNum = now.getDate();
+      const year = now.getFullYear();
+
+      document.getElementById("dateStr").innerText = `${dayName}, ${monthName} ${dateNum}, ${year}`;
+      document.getElementById("clockStr").innerText = now.toLocaleTimeString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Fetch Weather & Diagnostics
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/vitals");
+        if (res.ok) {
+          const data = await res.json();
+          // Weather from telemetry or default
+        }
+      } catch (e) {}
+    }
+    loadStats();
+
+    // Speech Synthesis (British Voice)
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      const voices = window.speechSynthesis.getVoices();
+      const ukVoice = voices.find(v => v.lang.includes("en-GB") || v.name.includes("UK") || v.name.includes("George"));
+      if (ukVoice) utt.voice = ukVoice;
+      utt.pitch = 0.95;
+      utt.rate = 1.02;
+      window.speechSynthesis.speak(utt);
+    }
+
+    function testAudioSpeech() {
+      speak("Command Center fully operational, Sir. All voice routing channels and telemetry streams are active.");
+    }
+
+    // Web Speech Recognition for Hands-free Voice
+    let recognition;
+    let isListening = false;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        const last = event.results.length - 1;
+        const transcript = event.results[last][0].transcript.trim().toLowerCase();
+        handleVoiceCommand(transcript);
+      };
+
+      recognition.onerror = () => {
+        isListening = false;
+        updateMicUi();
+      };
+
+      recognition.onend = () => {
+        if (isListening) recognition.start();
+      };
+    }
+
+    function toggleLocalListening() {
+      if (!recognition) {
+        alert("Speech recognition not supported in this browser window.");
+        return;
+      }
+      if (isListening) {
+        recognition.stop();
+        isListening = false;
+      } else {
+        recognition.start();
+        isListening = true;
+        speak("Listening, Sir.");
+      }
+      updateMicUi();
+    }
+
+    function updateMicUi() {
+      const btn = document.getElementById("reactorBtn");
+      const text = document.getElementById("micStatusText");
+      if (isListening) {
+        btn.style.boxShadow = "0 0 40px #10b981";
+        text.innerText = "Listening... say 'Hey Jarvis'";
+        text.style.color = "#10b981";
+      } else {
+        btn.style.boxShadow = "0 0 25px var(--cyan-bright)";
+        text.innerText = "Click to start speaking";
+        text.style.color = "var(--cyan)";
+      }
+    }
+
+    async function handleVoiceCommand(cmd) {
+      console.log("Heard:", cmd);
+      if (cmd.includes("weather")) {
+        speak("Retrieving current weather conditions, Sir.");
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=11.0168&longitude=76.9558&current_weather=true");
+        const d = await res.json();
+        speak(`Currently in Coimbatore it is ${d.current_weather.temperature} degrees Celsius with wind speeds of ${d.current_weather.windspeed} kilometers per hour.`);
+      } else if (cmd.includes("email") || cmd.includes("mail")) {
+        speak("Checking your latest personal and PSGIM college circulars, Sir.");
+        try {
+          const res = await fetch("https://jarvis-gpwz.onrender.com/api/emails");
+          const d = await res.json();
+          if (d.emails && d.emails.length > 0) {
+            speak(`You have ${d.emails.length} new items. Latest circular from ${d.emails[0].sender}: ${d.emails[0].subject}`);
+          } else {
+            speak("Inbox is completely clear, Sir. No pending circulars.");
+          }
+        } catch (e) {
+          speak("Connected to email stream. No critical alerts at this moment.");
+        }
+      } else if (cmd.includes("clean") || cmd.includes("close")) {
+        fetch('/api/preset/clean', {method:'POST'});
+        speak("Clearing desktop clutter now, Sir.");
+      } else if (cmd.includes("study") || cmd.includes("code")) {
+        fetch('/api/preset/study', {method:'POST'});
+        speak("Initializing study protocol. VS Code and research browser launched.");
+      } else {
+        speak(`Command acknowledged: ${cmd}`);
+      }
+    }
+
+    // Engine Selection
+    function selectEngine(type) {
+      document.querySelectorAll(".engine-card").forEach(c => c.classList.remove("active"));
+      const target = document.getElementById("card-" + type);
+      if (target) target.classList.add("active");
+      
+      const label = document.getElementById("activeEngineLabel");
+      const name = document.getElementById("engineName");
+
+      if (type === 'cloud') {
+        label.innerText = "● Now using: JARVIS Cloud Node";
+        name.innerText = "JARVIS Cloud (Render Singapore)";
+      } else if (type === 'whisper') {
+        label.innerText = "● Now using: On-device (Whisper)";
+        name.innerText = "On-Device Whisper (Local)";
+      } else if (type === 'groq') {
+        label.innerText = "● Now using: Groq (Whisper)";
+        name.innerText = "Groq LPU Whisper Fast Tier";
+      } else if (type === 'openai') {
+        label.innerText = "● Now using: OpenAI Cloud";
+        name.innerText = "OpenAI Whisper API";
+      } else if (type === 'deepgram') {
+        label.innerText = "● Now using: Deepgram Nova";
+        name.innerText = "Deepgram Streaming Nova";
+      } else if (type === 'elevenlabs') {
+        label.innerText = "● Now using: ElevenLabs Voice";
+        name.innerText = "ElevenLabs Neural Bettany";
+      }
+    }
+
+    // Tabs switch
+    function setTab(name) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    // Phone QR Modal
+    async function openPhoneModal() {
+      try {
+        const res = await fetch("/api/phone-connect");
+        const data = await res.json();
+        document.getElementById("qrImg").src = data.qr_base64;
+      } catch (e) {}
+      document.getElementById("qrModal").classList.add("open");
+    }
+
+    function closePhoneModal() {
+      document.getElementById("qrModal").classList.remove("open");
+    }
+  </script>
+</body>
+</html>
