@@ -241,7 +241,7 @@
     </div>
 
     <div style="display:flex; gap:16px; align-items:center;">
-      <button class="mic-button" onclick="startVoice()">🎙️</button>
+      <button class="mic-button" onclick="toggleAlwaysListening()">🎙️</button>
       <button class="mic-button" style="background:linear-gradient(135deg, #10b981, #059669); font-size:1.4rem;" onclick="toggleCamera()">📷</button>
     </div>
     <div class="voice-status" id="voice-label">Say: "What am I looking at?", "What's overhead?", or "Weather"</div>
@@ -299,28 +299,85 @@
         cameraActive = false;
         speakText("Meta Glass visual feed disengaged.");
       }
-    function startVoice() {
+    let recognition = null;
+    let isAlwaysListening = false;
+
+    function toggleAlwaysListening() {
       const label = document.getElementById('voice-label');
+      const badge = document.getElementById('glass-mode-badge');
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
       if (!SpeechRecognition) {
         label.textContent = "Speech recognition not supported on this browser.";
         return;
       }
 
-      const rec = new SpeechRecognition();
-      rec.lang = 'en-US';
-      rec.start();
-      label.textContent = "Listening to your earphones...";
+      if (isAlwaysListening) {
+        isAlwaysListening = false;
+        if (recognition) recognition.stop();
+        badge.textContent = "STANDBY";
+        badge.style.color = "#94a3b8";
+        label.textContent = "Always-listening paused. Tap mic to restart.";
+        speakText("Always listening mode paused, sir.");
+        return;
+      }
 
-      rec.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        label.textContent = 'You: "' + text + '"';
-        handleCommand(text);
+      isAlwaysListening = true;
+      badge.textContent = "ALWAYS LISTENING 🟢";
+      badge.style.color = "#10b981";
+      badge.style.background = "rgba(16, 185, 129, 0.2)";
+      speakText("Meta Glass always listening engaged, sir. Say Jarvis followed by your order.");
+
+      startContinuousRecognition();
+    }
+
+    function startContinuousRecognition() {
+      const label = document.getElementById('voice-label');
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition || !isAlwaysListening) return;
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        label.textContent = "Earphones live: Listening continuously (Wake word: 'Jarvis')...";
       };
 
-      rec.onerror = () => {
-        label.textContent = "Could not hear audio. Tap to try again.";
+      recognition.onresult = (e) => {
+        const lastIdx = e.results.length - 1;
+        const text = e.results[lastIdx][0].transcript.trim();
+        const lower = text.toLowerCase();
+
+        // Check for wake word or direct commands
+        if (lower.includes("jarvis") || lower.includes("weather") || lower.includes("flight") || lower.includes("mail") || lower.includes("strategy")) {
+          // Clean wake word
+          const cleanCmd = text.replace(/jarvis/gi, "").trim() || text;
+          label.textContent = 'Heard: "' + cleanCmd + '"';
+          handleCommand(cleanCmd);
+        }
       };
+
+      recognition.onerror = (e) => {
+        // Silently recover from network or no-speech timeouts
+        if (isAlwaysListening && e.error !== 'not-allowed') {
+          setTimeout(startContinuousRecognition, 500);
+        }
+      };
+
+      recognition.onend = () => {
+        // Automatically restart to keep listening forever
+        if (isAlwaysListening) {
+          setTimeout(startContinuousRecognition, 400);
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (err) {
+        // Handle active instance edge case
+      }
     }
 
     async function handleCommand(cmd) {
