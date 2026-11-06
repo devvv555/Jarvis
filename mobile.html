@@ -384,9 +384,9 @@
       const lower = cmd.toLowerCase();
       const label = document.getElementById('voice-label');
 
-      if (lower.includes('check mail') || lower.includes('check email') || lower.includes('inbox')) {
-        speakText("Checking your personal and PSGIM college emails right now, sir.");
-        loadEmails(true);
+      if (lower.includes('summary') || lower.includes('summarize') || lower.includes('check mail') || lower.includes('check email') || lower.includes('inbox')) {
+        speakText("Scanning and generating a strategic summary of your unread messages, sir.");
+        loadEmails(true, true);
         return;
       }
 
@@ -419,7 +419,7 @@
       }
     }
 
-    async function loadEmails(shouldSpeak = false) {
+    async function loadEmails(shouldSpeak = false, speakFullSummary = false) {
       const container = document.getElementById('emails-container');
       try {
         const res = await fetch('/api/emails');
@@ -428,11 +428,14 @@
 
         if (list.length === 0) {
           container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No unread emails at this moment, sir.</div>';
-          if (shouldSpeak) speakText("You have no new unread emails at this time, sir.");
+          if (shouldSpeak) speakText("You have no new unread emails at this time, sir. Your inbox is clear.");
           return;
         }
 
         container.innerHTML = '';
+        const collegeCount = list.filter(m => m.category === 'college').length;
+        const personalCount = list.length - collegeCount;
+
         list.forEach(m => {
           const isCollege = m.category === 'college';
           const item = document.createElement('div');
@@ -450,7 +453,13 @@
         });
 
         if (shouldSpeak && list.length > 0) {
-          speakText(`Sir, you have ${list.length} unread messages. The latest is from ${list[0].sender.split('<')[0]}, regarding ${list[0].subject}`);
+          if (speakFullSummary) {
+            let summaryVoice = `Sir, here is your executive email briefing. You have ${list.length} unread messages: ${collegeCount} regarding PSGIM college and ${personalCount} personal. `;
+            summaryVoice += `Key priority: The PSG Institute forwarding protocol is active. Most recent alert is from ${list[0].sender.split('<')[0]} regarding ${list[0].subject.replace(/[^a-zA-Z0-9 ]/g, '')}. All systems nominal.`;
+            speakText(summaryVoice);
+          } else {
+            speakText(`Sir, you have ${list.length} unread messages. The latest is from ${list[0].sender.split('<')[0]}, regarding ${list[0].subject}`);
+          }
         }
       } catch (e) {
         container.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;">Error fetching emails.</div>';
