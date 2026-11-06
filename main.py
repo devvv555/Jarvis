@@ -33,6 +33,25 @@ def get_emails():
     emails = fetch_and_categorize_emails(limit=8)
     return {"emails": emails}
 
+from notification_hub import notification_hub
+
+class IngestNotificationPayload(BaseModel):
+    app: str
+    title: str
+    text: str
+    priority: str = "normal"
+
+@app.get("/api/notifications")
+def get_notifications():
+    """Get live feed of phone notifications (WhatsApp, Calls, SMS, College Portal)."""
+    return {"notifications": notification_hub.get_all()}
+
+@app.post("/api/push-notification")
+def push_notification(payload: IngestNotificationPayload):
+    """Webhook for Android MacroDroid / Tasker / KDE Connect to push phone notifications."""
+    item = notification_hub.add_notification(payload.app, payload.title, payload.text, payload.priority)
+    return {"status": "received", "item": item}
+
 @app.get("/healthz")
 def health():
     return {"status": "online", "system": "J.A.R.V.I.S."}
