@@ -405,8 +405,24 @@
         }, () => {});
       }
 
+      // Dual Failover: Cloud first, Laptop local Wi-Fi fallback
+      async function fetchWithFailover(endpoint, options = {}) {
+        const cloudHost = 'https://jarvis-gpwz.onrender.com';
+        const localHost = 'http://192.168.10.14:8088';
+
+        try {
+          const res = await fetch(endpoint, options);
+          if (res.ok) return res;
+          throw new Error('Cloud response not ok');
+        } catch (cloudErr) {
+          console.warn('Cloud node unreachable, failing over to Local Laptop node...', cloudErr);
+          const fallbackUrl = localHost + endpoint;
+          return await fetch(fallbackUrl, options);
+        }
+      }
+
       try {
-        const res = await fetch('/api/ask', {
+        const res = await fetchWithFailover('/api/ask', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({query: cmd, lat: userLat, lon: userLon})
@@ -415,7 +431,7 @@
         label.textContent = data.answer;
         speakText(data.answer);
       } catch (e) {
-        const err = "Satellite uplink disrupted, sir. Please retry.";
+        const err = "Both cloud and local auxiliary nodes failed to respond, sir.";
         label.textContent = err;
         speakText(err);
       }
@@ -424,7 +440,15 @@
     async function loadEmails(shouldSpeak = false, speakFullSummary = false) {
       const container = document.getElementById('emails-container');
       try {
-        const res = await fetch('/api/emails');
+        const cloudHost = 'https://jarvis-gpwz.onrender.com';
+        const localHost = 'http://192.168.10.14:8088';
+        let res;
+        try {
+          res = await fetch('/api/emails');
+          if (!res.ok) throw new Error();
+        } catch (err) {
+          res = await fetch(localHost + '/api/emails');
+        }
         const data = await res.json();
         const list = data.emails || [];
 
