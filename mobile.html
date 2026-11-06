@@ -225,9 +225,26 @@
     <div class="status-badge">ONLINE 24/7</div>
   </header>
 
-  <div class="voice-card">
-    <button class="mic-button" onclick="startVoice()">🎙️</button>
-    <div class="voice-status" id="voice-label">Tap to speak through earphones</div>
+  <!-- Meta Glass Smart Vision & Audio Mode -->
+  <div class="voice-card" style="border-color: rgba(56, 189, 248, 0.5);">
+    <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:8px;">
+      <span style="font-size:0.75rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px;">👓 Meta Glass Smart Mode</span>
+      <span id="glass-mode-badge" style="font-size:0.65rem; background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 8px; border-radius:10px;">EARPHONES LINKED</span>
+    </div>
+
+    <!-- Live Glass Camera Viewfinder (optional toggle) -->
+    <div id="camera-box" style="display:none; width:100%; border-radius:12px; overflow:hidden; position:relative; margin-bottom:10px; border:1px solid var(--accent);">
+      <video id="glass-video" autoplay playsinline style="width:100%; height:180px; object-fit:cover; background:#000;"></video>
+      <div style="position:absolute; top:8px; left:8px; font-size:0.65rem; background:rgba(0,0,0,0.6); padding:2px 8px; border-radius:4px; color:#38bdf8;">
+        LIVE POV CAMERA
+      </div>
+    </div>
+
+    <div style="display:flex; gap:16px; align-items:center;">
+      <button class="mic-button" onclick="startVoice()">🎙️</button>
+      <button class="mic-button" style="background:linear-gradient(135deg, #10b981, #059669); font-size:1.4rem;" onclick="toggleCamera()">📷</button>
+    </div>
+    <div class="voice-status" id="voice-label">Say: "What am I looking at?", "What's overhead?", or "Weather"</div>
   </div>
 
   <div class="section-title">
@@ -256,6 +273,32 @@
       }
     }
 
+    let cameraActive = false;
+    let videoStream = null;
+
+    async function toggleCamera() {
+      const box = document.getElementById('camera-box');
+      const video = document.getElementById('glass-video');
+      if (!cameraActive) {
+        try {
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+          });
+          video.srcObject = videoStream;
+          box.style.display = 'block';
+          cameraActive = true;
+          speakText("Meta Glass visual feeds online, sir. I am observing through your camera.");
+        } catch (e) {
+          speakText("Camera permission denied, sir.");
+        }
+      } else {
+        if (videoStream) {
+          videoStream.getTracks().forEach(t => t.stop());
+        }
+        box.style.display = 'none';
+        cameraActive = false;
+        speakText("Meta Glass visual feed disengaged.");
+      }
     function startVoice() {
       const label = document.getElementById('voice-label');
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
