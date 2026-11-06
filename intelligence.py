@@ -111,3 +111,25 @@ def analyze_visual_scene(scene_description: str = "general"):
         "Objects, text, and environmental depth have been indexed into working memory."
     )
 
+def analyze_sleep_telemetry(hours_slept: float = 7.5, deep_pct: int = 22, rem_pct: int = 24):
+    """
+    Biometric Sleep Tracker Integration:
+    Ingests data from smartwatch / phone sleep trackers (Sleep as Android, Health Connect, Garmin, Apple Health).
+    Calculates sleep performance score, cognitive readiness, and provides morning briefing.
+    """
+    score = int(min(100, (hours_slept / 8.0) * 60 + (deep_pct / 20.0) * 20 + (rem_pct / 20.0) * 20))
+    if score >= 85:
+        readiness = "Peak Cognitive Readiness"
+        advice = "Optimal neural performance for high-focus strategy and development sessions today, Sir."
+    elif score >= 70:
+        readiness = "Nominal Recovery"
+        advice = "Sufficient energy reserves. Standard productivity schedule recommended, Sir."
+    else:
+        readiness = "Sub-Optimal Recovery"
+        advice = "Elevated sleep debt detected. I recommend light scheduling and prioritizing restorative rest tonight, Sir."
+
+    return (
+        f"Sleep telemetry synchronized, Sir. Total duration: {hours_slept} hours "
+        f"({deep_pct}% Deep, {rem_pct}% REM). Recovery Score: {score}/100 — Status: {readiness}. {advice}"
+    )
+

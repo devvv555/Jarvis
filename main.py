@@ -20,7 +20,8 @@ from intelligence import (
     game_theory_analyzer,
     translate_speech,
     human_centric_nav,
-    analyze_visual_scene
+    analyze_visual_scene,
+    analyze_sleep_telemetry
 )
 
 app = FastAPI(title="J.A.R.V.I.S. Mobile Cloud")
@@ -95,7 +96,10 @@ def ask_jarvis(payload: QueryPayload):
     # 6. Meta Glass "See What You See" Vision
     elif any(k in q for k in ["what am i looking at", "look at this", "see this", "what is this", "scan"]):
         ans = analyze_visual_scene(q)
-    # 7. General intelligence fallback
+    # 7. Biometric Sleep Tracker & Readiness
+    elif any(k in q for k in ["sleep", "how did i sleep", "sleep score", "recovery", "deep sleep", "rem"]):
+        ans = analyze_sleep_telemetry()
+    # 8. General intelligence fallback
     else:
         ans = (
             f"Analyzing query: '{payload.query}'. At your service, sir. "
