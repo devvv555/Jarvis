@@ -14,7 +14,14 @@ import uvicorn
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from unified_email import fetch_and_categorize_emails
 from notification_hub import notification_hub
-from intelligence import get_live_weather, get_overhead_flights, game_theory_analyzer
+from intelligence import (
+    get_live_weather, 
+    get_overhead_flights, 
+    game_theory_analyzer,
+    translate_speech,
+    human_centric_nav,
+    analyze_visual_scene
+)
 
 app = FastAPI(title="J.A.R.V.I.S. Mobile Cloud")
 
@@ -77,11 +84,22 @@ def ask_jarvis(payload: QueryPayload):
     # 3. Game Theory & Strategic decision
     elif any(k in q for k in ["game theory", "strategy", "decision", "negotiate", "optimal", "payoff", "nash"]):
         ans = game_theory_analyzer(payload.query)
-    # 4. General intelligence fallback
+    # 4. Meta Glass Live Translation
+    elif any(k in q for k in ["translate", "translation", "spanish", "french", "german", "hindi", "tamil"]):
+        clean_query = q.replace("translate", "").strip()
+        ans = translate_speech(clean_query, "es" if "spanish" in q else "fr" if "french" in q else "hi" if "hindi" in q else "es")
+    # 5. Meta Glass Landmark Navigation
+    elif any(k in q for k in ["navigate", "directions", "where is", "route to", "take me to"]):
+        dest = q.replace("navigate to", "").replace("directions to", "").strip()
+        ans = human_centric_nav(dest, payload.lat, payload.lon)
+    # 6. Meta Glass "See What You See" Vision
+    elif any(k in q for k in ["what am i looking at", "look at this", "see this", "what is this", "scan"]):
+        ans = analyze_visual_scene(q)
+    # 7. General intelligence fallback
     else:
         ans = (
             f"Analyzing query: '{payload.query}'. At your service, sir. "
-            f"All meteorological, airspace, and tactical game theory channels are active."
+            f"Meta Glass audio, vision, and cognitive streams are fully engaged."
         )
         
     return {"answer": ans}
