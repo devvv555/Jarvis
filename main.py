@@ -5,6 +5,7 @@ Serves the standalone mobile app and provides email checking endpoints for your 
 
 import os
 import sys
+from pydantic import BaseModel
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +13,8 @@ import uvicorn
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from unified_email import fetch_and_categorize_emails
+from notification_hub import notification_hub
+from intelligence import get_live_weather, get_overhead_flights, game_theory_analyzer
 
 app = FastAPI(title="J.A.R.V.I.S. Mobile Cloud")
 
@@ -55,9 +58,6 @@ def push_notification(payload: IngestNotificationPayload):
 @app.get("/healthz")
 def health():
     return {"status": "online", "system": "J.A.R.V.I.S."}
-
-from pydantic import BaseModel
-from intelligence import get_live_weather, get_overhead_flights, game_theory_analyzer
 
 class QueryPayload(BaseModel):
     query: str
