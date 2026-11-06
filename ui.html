@@ -1073,6 +1073,7 @@
       <button class="tab-btn" onclick="setTab('center')">COMMAND CENTER</button>
       <button class="tab-btn" onclick="setTab('core')">AI CORE</button>
       <button class="tab-btn active" onclick="setTab('voice')">AI VOICE</button>
+      <button class="tab-btn" onclick="setTab('helpdesk')">HELPDESK</button>
       <button class="tab-btn" onclick="setTab('settings')">SETTINGS</button>
     </div>
 
@@ -1092,8 +1093,8 @@
     </div>
   </header>
 
-  <!-- MAIN STAGE -->
-  <div class="main-stage">
+  <!-- TAB CONTAINER 1: VOICE CHAT (ACTIVE) -->
+  <div class="main-stage tab-content" id="tab-voice">
 
     <!-- HERO VOICE CHAT CARD -->
     <div class="hero-voice-card">
@@ -1338,6 +1339,127 @@
 
   </div>
 
+  <!-- TAB CONTAINER 2: HELPDESK & MULTI-CHANNEL (JARVIS.CX INSPIRED) -->
+  <div class="main-stage tab-content" id="tab-helpdesk" style="display:none;">
+    <div class="hero-voice-card" style="grid-template-columns: 1.2fr 1fr;">
+      <div class="hero-left">
+        <div class="chip-group">
+          <div class="status-chip">● 10+ Channels Connected</div>
+          <div class="badge-chip">⚡ 80% Auto-Resolved</div>
+          <div class="badge-chip" style="background:rgba(245,158,11,0.15); border-color:var(--amber); color:var(--amber);">Free Omni-Agent</div>
+        </div>
+        <div class="hero-title-group">
+          <h2>SUPPORT SUITE</h2>
+          <h3>Jarvis Helpdesk</h3>
+        </div>
+        <p class="hero-desc">
+          Automate support & responses across Gmail, WhatsApp, Messenger, Instagram, and web tickets with your autonomous AI second brain.
+        </p>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+        <div class="status-tile" style="flex-direction:column; align-items:flex-start;">
+          <div class="t-sub" style="font-size:0.65rem; color:var(--text-muted);">AUTO-RESOLVED</div>
+          <div style="font-size:1.6rem; font-weight:800; color:var(--cyan-bright); margin-top:4px;">92.4%</div>
+          <div style="font-size:0.68rem; color:#6ee7b7;">+14% faster than humans</div>
+        </div>
+        <div class="status-tile" style="flex-direction:column; align-items:flex-start;">
+          <div class="t-sub" style="font-size:0.65rem; color:var(--text-muted);">CONNECTED CHANNELS</div>
+          <div style="font-size:1.6rem; font-weight:800; color:#fff; margin-top:4px;">12</div>
+          <div style="font-size:0.68rem; color:var(--text-muted);">Email, WhatsApp, Discord, Web</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Tickets & Channel Integrations -->
+    <div class="hud-grid-2">
+      <div class="hud-box">
+        <div class="hud-box-header">
+          <div class="icon-wrap">📬</div>
+          <div>
+            <h4>Live Inquiries & Tickets</h4>
+            <p>Recent automated interactions from college circulars and personal mail.</p>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;" id="ticketStream">
+          <div class="status-tile">
+            <div class="tile-left">
+              <span style="font-size:1.2rem;">📧</span>
+              <div>
+                <div class="t-main" style="font-size:0.8rem;">PSGIM College Notification</div>
+                <div class="t-sub">MBA Circular Forwarded • Auto-categorized</div>
+              </div>
+            </div>
+            <button class="engine-btn" onclick="alert('Viewing ticket details...')">Resolve</button>
+          </div>
+          <div class="status-tile">
+            <div class="tile-left">
+              <span style="font-size:1.2rem;">💬</span>
+              <div>
+                <div class="t-main" style="font-size:0.8rem;">Phone Webhook Ping</div>
+                <div class="t-sub">Mobile notification hub • Processed</div>
+              </div>
+            </div>
+            <button class="engine-btn" onclick="alert('Ticket auto-archived.')">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-box">
+        <div class="hud-box-header">
+          <div class="icon-wrap">🛠️</div>
+          <div>
+            <h4>Omni-Channel Connectors</h4>
+            <p>Active webhooks and agent integrations across your workflow.</p>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+          <div class="field-card"><span class="f-label">Gmail Primary</span><span class="f-val">Connected 🟢</span></div>
+          <div class="field-card"><span class="f-label">PSGIM College</span><span class="f-val">Forwarded 🟢</span></div>
+          <div class="field-card"><span class="f-label">Mobile Push</span><span class="f-val">Listening 🟢</span></div>
+          <div class="field-card"><span class="f-label">Desktop Screen</span><span class="f-val">Armed 🟢</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONTAINER 3: COMMAND CENTER (APPS & PRESETS) -->
+  <div class="main-stage tab-content" id="tab-center" style="display:none;">
+    <div class="hero-voice-card" style="grid-template-columns: 1fr 1fr;">
+      <div class="hero-left">
+        <div class="hero-title-group">
+          <h2>COMMAND</h2>
+          <h3>App & Workflow Launcher</h3>
+        </div>
+        <p class="hero-desc">Launch development environments, trigger cleanups, and run automated routines with zero command line typing.</p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; justify-content:flex-end;">
+        <button class="test-btn" onclick="fetch('/api/preset/study', {method:'POST'}); speak('Study mode launched');" style="padding:10px 18px;">📚 Study Mode</button>
+        <button class="test-btn" onclick="fetch('/api/preset/break', {method:'POST'}); speak('Break mode launched');" style="padding:10px 18px; background:linear-gradient(135deg, #10b981, #059669);">☕ Break Mode</button>
+        <button class="test-btn" onclick="fetch('/api/preset/clean', {method:'POST'}); speak('Workspace cleaned');" style="padding:10px 18px; background:linear-gradient(135deg, #ef4444, #b91c1c);">🧹 Clean Windows</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONTAINER 4: AI CORE & MEMORY -->
+  <div class="main-stage tab-content" id="tab-core" style="display:none;">
+    <div class="hud-box">
+      <div class="hud-box-header">
+        <div class="icon-wrap">🧠</div>
+        <div>
+          <h4>Persistent Second Brain & Memory</h4>
+          <p>Context retained across sessions in your local database.</p>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:10px;">
+        <div class="field-card"><span class="f-label">Commander</span><span class="f-val">Devdarshan</span></div>
+        <div class="field-card"><span class="f-label">Institution</span><span class="f-val">PSGIM Coimbatore</span></div>
+        <div class="field-card"><span class="f-label">Primary Node</span><span class="f-val">Singapore Cloud</span></div>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING COMMAND BAR (BOTTOM) -->
   <div class="bottom-command-bar">
     <div class="bottom-left-info">
@@ -1578,7 +1700,11 @@
     // Tabs switch
     function setTab(name) {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      event.target.classList.add("active");
+      if (event && event.target) event.target.classList.add("active");
+      
+      document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+      const target = document.getElementById("tab-" + name);
+      if (target) target.style.display = (name === "settings" || name === "core" || name === "center" || name === "helpdesk" || name === "voice") ? "flex" : "block";
     }
 
     // Phone QR Modal
