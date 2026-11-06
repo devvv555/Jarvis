@@ -12,10 +12,13 @@ from email.header import decode_header
 from typing import List, Dict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from notifications import NotificationManager
-from email_extractor import EmailExtractor
+try:
+    from notifications import NotificationManager
+    notifier = NotificationManager("J.A.R.V.I.S.")
+except Exception:
+    notifier = None
 
-notifier = NotificationManager("J.A.R.V.I.S.")
+from email_extractor import EmailExtractor
 extractor = EmailExtractor()
 
 PERSONAL_EMAIL = "devdarshanv2005@gmail.com"
@@ -92,11 +95,12 @@ def fetch_and_categorize_emails(limit: int = 6):
                 print(f"  • Extracted Contacts: {', '.join(referenced_emails[:3])}")
             print("-" * 55)
 
-            # Fire priority desktop alert for college emails or latest email
-            if is_college and idx <= 2:
-                notifier.notify("PSGIM College Notice", f"Subject: {subject[:80]}\nFrom: {sender}")
-            elif idx == 1:
-                notifier.notify("New Unread Email", f"From: {sender.split('<')[0]}\nSubject: {subject[:70]}")
+            # Fire priority desktop alert for college emails or latest email (when on desktop)
+            if notifier:
+                if is_college and idx <= 2:
+                    notifier.notify("PSGIM College Notice", f"Subject: {subject[:80]}\nFrom: {sender}")
+                elif idx == 1:
+                    notifier.notify("New Unread Email", f"From: {sender.split('<')[0]}\nSubject: {subject[:70]}")
 
             processed.append({
                 "category": "college" if is_college else "personal",
