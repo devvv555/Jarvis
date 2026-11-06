@@ -352,12 +352,14 @@
         const text = e.results[lastIdx][0].transcript.trim();
         const lower = text.toLowerCase();
 
-        // Check for wake word or direct commands
-        if (lower.includes("jarvis") || lower.includes("weather") || lower.includes("flight") || lower.includes("mail") || lower.includes("strategy")) {
-          // Clean wake word
-          const cleanCmd = text.replace(/jarvis/gi, "").trim() || text;
-          label.textContent = 'Heard: "' + cleanCmd + '"';
-          handleCommand(cleanCmd);
+        // Only trigger if user explicitly says 'Jarvis' or a specific action command
+        if (lower.startsWith("jarvis") || lower.includes("jarvis ") || lower.includes("check mail") || lower.includes("weather") || lower.includes("flight") || lower.includes("sleep")) {
+          // Strip out the wake word cleanly
+          const cleanCmd = text.replace(/hey jarvis/gi, "").replace(/jarvis/gi, "").trim();
+          if (cleanCmd.length > 1) {
+            label.textContent = 'Understood: "' + cleanCmd + '"';
+            handleCommand(cleanCmd);
+          }
         }
       };
 

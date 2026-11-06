@@ -99,12 +99,11 @@ def ask_jarvis(payload: QueryPayload):
     # 7. Biometric Sleep Tracker & Readiness
     elif any(k in q for k in ["sleep", "how did i sleep", "sleep score", "recovery", "deep sleep", "rem"]):
         ans = analyze_sleep_telemetry()
-    # 8. General intelligence fallback
+    # 8. General conversational query
     else:
-        ans = (
-            f"Analyzing query: '{payload.query}'. At your service, sir. "
-            f"Meta Glass audio, vision, and cognitive streams are fully engaged."
-        )
+        # Clean wake words
+        clean_text = q.replace("jarvis", "").strip()
+        ans = f"Understood, Sir: '{clean_text}'. How may I assist you further with this?"
         
     return {"answer": ans}
 
